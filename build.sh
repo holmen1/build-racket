@@ -3,14 +3,10 @@
 set -euxfo pipefail;
 
 case "${1:-x}" in
-  8x_2) declare -r series="8x_2" ;;
-  8x_1) declare -r series="8x_1" ;;
   8x) declare -r series="8x" ;;
-  7x) declare -r series="7x" ;;
-  6x) declare -r series="6x" ;;
   snapshot) declare -r series="snapshot" ;;
 
-  *) echo "usage: $0 [6x|7x|8x|8x_1|8x_2|snapshot]"
+  *) echo "usage: $0 [8x|snapshot]"
      exit 1
      ;;
 esac
@@ -54,57 +50,11 @@ build_snapshot () {
   declare -r installer="https://users.cs.utah.edu/plt/snapshots/current/installers/racket-minimal-current-x86_64-linux-jesse.sh";
   build "racket" "${installer}" "${version}" "${version}";
 
-  declare -r bc_installer="https://users.cs.utah.edu/plt/snapshots/current/installers/racket-minimal-current-x86_64-linux-bc.sh";
-  build "racket" "${bc_installer}" "${version}" "${version}-bc";
-
   declare -r full_installer="https://users.cs.utah.edu/plt/snapshots/current/installers/racket-current-x86_64-linux-jesse.sh";
   build "racket" "${full_installer}" "${version}" "${version}-full";
-
-  declare -r full_bc_installer="https://users.cs.utah.edu/plt/snapshots/current/installers/racket-current-x86_64-linux-bc.sh";
-  build "racket" "${full_bc_installer}" "${version}" "${version}-bc-full";
 }
 
-build_8x () {
-  declare -r version="${1}";
-
-  declare -r installer_path="racket-minimal-${version}-x86_64-linux-natipkg.sh";
-  declare -r installer=$(installer_url "${version}" "${installer_path}") || exit "${?}";
-  build "racket" "${installer}" "${version}" "${version}";
-
-  declare -r bc_installer_path="racket-minimal-${version}-x86_64-linux-bc.sh";
-  declare -r bc_installer=$(installer_url "${version}" "${bc_installer_path}") || exit "${?}";
-  build "racket" "${bc_installer}" "${version}" "${version}-bc";
-
-  declare -r full_installer_path="racket-${version}-x86_64-linux-natipkg.sh";
-  declare -r full_installer=$(installer_url "${version}" "${full_installer_path}") || exit "${?}";
-  build "racket" "${full_installer}" "${version}" "${version}-full";
-
-  declare -r full_bc_installer_path="racket-${version}-x86_64-linux-bc.sh";
-  declare -r full_bc_installer=$(installer_url "${version}" "${full_bc_installer_path}") || exit "${?}";
-  build "racket" "${full_bc_installer}" "${version}" "${version}-bc-full";
-};
-
-build_7x () {
-  declare -r version="${1}";
-
-  declare -r installer_path="racket-minimal-${version}-x86_64-linux-natipkg.sh";
-  declare -r installer=$(installer_url "${version}" "${installer_path}") || exit "${?}";
-  build "racket" "${installer}" "${version}" "${version}";
-
-  declare -r cs_installer_path="racket-minimal-${version}-x86_64-linux-natipkg-cs.sh";
-  declare -r cs_installer=$(installer_url "${version}" "${cs_installer_path}") || exit "${?}";
-  build "racket" "${cs_installer}" "${version}" "${version}-cs";
-
-  declare -r full_installer_path="racket-${version}-x86_64-linux-natipkg.sh";
-  declare -r full_installer=$(installer_url "${version}" "${full_installer_path}") || exit "${?}";
-  build "racket" "${full_installer}" "${version}" "${version}-full";
-
-  declare -r full_cs_installer_path="racket-${version}-x86_64-linux-natipkg-cs.sh";
-  declare -r full_cs_installer=$(installer_url "${version}" "${full_cs_installer_path}") || exit "${?}";
-  build "racket" "${full_cs_installer}" "${version}" "${version}-cs-full";
-};
-
-build_6x_7x_old () {
+build_8 () {
   declare -r version="${1}";
 
   declare -r installer_path="racket-minimal-${version}-x86_64-linux-natipkg.sh";
@@ -114,14 +64,6 @@ build_6x_7x_old () {
   declare -r full_installer_path="racket-${version}-x86_64-linux-natipkg.sh";
   declare -r full_installer=$(installer_url "${version}" "${full_installer_path}") || exit "${?}";
   build "racket" "${full_installer}" "${version}" "${version}-full";
-};
-
-foreach () {
-  declare -r command="${1}";
-  declare -r args="${@:2}";
-  for _arg in ${args}; do
-    "${command}" "${_arg}";
-  done;
 };
 
 declare -r LATEST_RACKET_VERSION="8.12";
@@ -131,38 +73,15 @@ tag_latest () {
   docker image tag "${repository}:${LATEST_RACKET_VERSION}" "${repository}:latest";
 };
 
-# The 8x series is split into two to avoid running into storage limits in CI.
-build_8x_2 () {
-  foreach build_8x "8.10" "8.11" "8.11.1" "8.12";
+build_8x () {
+  build_8 "${LATEST_RACKET_VERSION}";
   tag_latest "${DOCKER_REPOSITORY}";
   tag_latest "${SECONDARY_DOCKER_REPOSITORY}";
-}
-
-build_8x_1 () {
-  foreach build_8x "8.0" "8.1" "8.2" "8.3" "8.4" "8.5" "8.6" "8.7" "8.8" "8.9";
-}
-
-build_all_8x () {
-  build_8x_1;
-  build_8x_2;
-}
-
-build_all_7x () {
-  foreach build_6x_7x_old "7.0" "7.1" "7.3";
-  foreach build_7x "7.4" "7.5" "7.6" "7.7" "7.8" "7.9";
-}
-
-build_all_6x () {
-  foreach build_6x_7x_old "6.5" "6.6" "6.7" "6.8" "6.9" "6.10" "6.10.1" "6.11" "6.12";
 }
 
 build_base;
 
 case "$series" in
-  8x_2) build_8x_2 ;;
-  8x_1) build_8x_1 ;;
-  8x) build_all_8x ;;
-  7x) build_all_7x ;;
-  6x) build_all_6x ;;
+  8x) build_8x ;;
   snapshot) build_snapshot ;;
 esac

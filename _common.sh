@@ -4,10 +4,8 @@ set -euxfo pipefail;
 
 DOCKER_REPOSITORY="racket/racket";
 
-# We used to push images to the jackfirth/racket DockerHub repo instead
-# of racket/racket. For backwards compatibility, we still push the images
-# to that repo in addition to the primary racket/racket repo.
-SECONDARY_DOCKER_REPOSITORY="jackfirth/racket";
+# My repo
+SECONDARY_DOCKER_REPOSITORY="holmen1/racket";
 
 find_images () {
     declare -r repository="${1}";

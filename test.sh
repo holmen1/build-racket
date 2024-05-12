@@ -21,10 +21,6 @@ test-image () {
   fi
 };
 
-for image in $(find_testable_images "${DOCKER_REPOSITORY}"); do
-  test-image "${image}";
-done
-
 for image in $(find_testable_images "${SECONDARY_DOCKER_REPOSITORY}"); do
   test-image "${image}";
 done
